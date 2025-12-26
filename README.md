@@ -1,4 +1,4 @@
-# Sora2API
+# newSora2API
 
 <div align="center">
 
@@ -12,6 +12,22 @@
 </div>
 
 ---
+### 本项目为https://github.com/TheSmallHanCat/sora2api 的优化版
+
+### 界面
+<img width="2516" height="1324" alt="image" src="https://github.com/user-attachments/assets/abf0bd6f-8dc9-407d-8033-ac100549cc80" />
+
+### 重要改动！
+<img width="2550" height="1330" alt="image" src="https://github.com/user-attachments/assets/8e465866-d989-4301-86a1-2c866e546106" />
+
+### 改动说明
+- 🎨 **一键测试** - 无需再手动点每一个邮箱的测试，自动分类出429、401等状态
+- 🖼️ **禁用低可用** - 点击后禁用为1可用额度的邮箱
+- 🎬 **启用所有可用** - 启动所有活跃邮箱
+- 📊 **清理异常** - 自动删除所有标记为401的账号和已过期账号
+- 🔄 **2api的调用逻辑（重大改动！）** - 此改动解决了随机到已经并发过且处于429的邮箱，每个账号只并发一次直到下一个轮询。<br>（轮询调度适用于本地可快速更换节点搭配使用，对服务器收益甚微。服务器还是推荐使用代理）
+
+# 以下为原项目介绍
 
 
 ## ✨ 功能特性
