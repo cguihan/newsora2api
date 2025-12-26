@@ -132,7 +132,8 @@ class TokenRefreshConfig(BaseModel):
 class CallLogicConfig(BaseModel):
     """Call logic configuration"""
     id: int = 1
-    polling_mode_enabled: bool  # Read from database, initialized from setting.toml on first startup
+    call_mode: str = "default"  # "default" or "polling"
+    polling_mode_enabled: bool = False  # Read from database, initialized from setting.toml on first startup
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

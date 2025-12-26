@@ -17,56 +17,53 @@ from ..core.models import Task, RequestLog
 from ..core.config import config
 from ..core.logger import debug_logger
 
-# Model configuration
-MODEL_CONFIG = {
-    "sora-image": {
-        "type": "image",
-        "width": 360,
-        "height": 360
-    },
-    "sora-image-landscape": {
-        "type": "image",
-        "width": 540,
-        "height": 360
-    },
-    "sora-image-portrait": {
-        "type": "image",
-        "width": 360,
-        "height": 540
-    },
-    # Video models with 10s duration (300 frames)
-    "sora-video-10s": {
-        "type": "video",
-        "orientation": "landscape",
-        "n_frames": 300
-    },
-    "sora-video-landscape-10s": {
-        "type": "video",
-        "orientation": "landscape",
-        "n_frames": 300
-    },
-    "sora-video-portrait-10s": {
-        "type": "video",
-        "orientation": "portrait",
-        "n_frames": 300
-    },
-    # Video models with 15s duration (450 frames)
-    "sora-video-15s": {
-        "type": "video",
-        "orientation": "landscape",
-        "n_frames": 450
-    },
-    "sora-video-landscape-15s": {
-        "type": "video",
-        "orientation": "landscape",
-        "n_frames": 450
-    },
-    "sora-video-portrait-15s": {
-        "type": "video",
-        "orientation": "portrait",
-        "n_frames": 450
-    }
+# Model configuration (canonical names match README / manage.html)
+MODEL_CONFIG: Dict[str, Dict[str, Any]] = {
+    # Image models
+    "gpt-image": {"type": "image", "width": 360, "height": 360},
+    "gpt-image-landscape": {"type": "image", "width": 540, "height": 360},
+    "gpt-image-portrait": {"type": "image", "width": 360, "height": 540},
+
+    # Video models - Standard (Sora2)
+    "sora2-landscape-10s": {"type": "video", "orientation": "landscape", "n_frames": 300},
+    "sora2-portrait-10s": {"type": "video", "orientation": "portrait", "n_frames": 300},
+    "sora2-landscape-15s": {"type": "video", "orientation": "landscape", "n_frames": 450},
+    "sora2-portrait-15s": {"type": "video", "orientation": "portrait", "n_frames": 450},
+    "sora2-landscape-25s": {"type": "video", "orientation": "landscape", "n_frames": 750, "model": "sy_8", "size": "small"},
+    "sora2-portrait-25s": {"type": "video", "orientation": "portrait", "n_frames": 750, "model": "sy_8", "size": "small"},
+
+    # Video models - Pro (requires ChatGPT Pro subscription)
+    "sora2pro-landscape-10s": {"type": "video", "orientation": "landscape", "n_frames": 300, "model": "sy_ore", "size": "small", "require_pro": True},
+    "sora2pro-portrait-10s": {"type": "video", "orientation": "portrait", "n_frames": 300, "model": "sy_ore", "size": "small", "require_pro": True},
+    "sora2pro-landscape-15s": {"type": "video", "orientation": "landscape", "n_frames": 450, "model": "sy_ore", "size": "small", "require_pro": True},
+    "sora2pro-portrait-15s": {"type": "video", "orientation": "portrait", "n_frames": 450, "model": "sy_ore", "size": "small", "require_pro": True},
+    "sora2pro-landscape-25s": {"type": "video", "orientation": "landscape", "n_frames": 750, "model": "sy_ore", "size": "small", "require_pro": True},
+    "sora2pro-portrait-25s": {"type": "video", "orientation": "portrait", "n_frames": 750, "model": "sy_ore", "size": "small", "require_pro": True},
+
+    # Video models - Pro HD (requires ChatGPT Pro subscription)
+    "sora2pro-hd-landscape-10s": {"type": "video", "orientation": "landscape", "n_frames": 300, "model": "sy_ore", "size": "large", "require_pro": True},
+    "sora2pro-hd-portrait-10s": {"type": "video", "orientation": "portrait", "n_frames": 300, "model": "sy_ore", "size": "large", "require_pro": True},
+    "sora2pro-hd-landscape-15s": {"type": "video", "orientation": "landscape", "n_frames": 450, "model": "sy_ore", "size": "large", "require_pro": True},
+    "sora2pro-hd-portrait-15s": {"type": "video", "orientation": "portrait", "n_frames": 450, "model": "sy_ore", "size": "large", "require_pro": True},
 }
+
+# Backwards compatible aliases (old model naming)
+MODEL_ALIASES: Dict[str, str] = {
+    # Legacy image names
+    "sora-image": "gpt-image",
+    "sora-image-landscape": "gpt-image-landscape",
+    "sora-image-portrait": "gpt-image-portrait",
+    # Legacy video names
+    "sora-video-10s": "sora2-landscape-10s",
+    "sora-video-landscape-10s": "sora2-landscape-10s",
+    "sora-video-portrait-10s": "sora2-portrait-10s",
+    "sora-video-15s": "sora2-landscape-15s",
+    "sora-video-landscape-15s": "sora2-landscape-15s",
+    "sora-video-portrait-15s": "sora2-portrait-15s",
+}
+
+for alias, target in MODEL_ALIASES.items():
+    MODEL_CONFIG[alias] = MODEL_CONFIG[target]
 
 class GenerationHandler:
     """Handle generation requests"""
@@ -193,7 +190,13 @@ class GenerationHandler:
                 raise Exception(f"Failed to download file: {response.status_code}")
             return response.content
     
-    async def check_token_availability(self, is_image: bool, is_video: bool, required_sora2_remaining: int = 1) -> bool:
+    async def check_token_availability(
+        self,
+        is_image: bool,
+        is_video: bool,
+        required_sora2_remaining: int = 1,
+        require_pro: bool = False,
+    ) -> bool:
         """Check if tokens are available for the given model type
 
         Args:
@@ -206,7 +209,8 @@ class GenerationHandler:
         token_obj = await self.load_balancer.select_token(
             for_image_generation=is_image,
             for_video_generation=is_video,
-            required_sora2_remaining=required_sora2_remaining
+            required_sora2_remaining=required_sora2_remaining,
+            require_pro=require_pro,
         )
         return token_obj is not None
 
@@ -242,10 +246,16 @@ class GenerationHandler:
         is_video = model_config["type"] == "video"
         is_image = model_config["type"] == "image"
         required_sora2_remaining = self._get_required_sora2_remaining(model_config)
+        require_pro = bool(model_config.get("require_pro", False))
 
         # Non-streaming mode: only check availability
         if not stream:
-            available = await self.check_token_availability(is_image, is_video, required_sora2_remaining)
+            available = await self.check_token_availability(
+                is_image,
+                is_video,
+                required_sora2_remaining,
+                require_pro=require_pro,
+            )
             if available:
                 if is_image:
                     message = "All tokens available for image generation. Please enable streaming to use the generation feature."
@@ -289,7 +299,8 @@ class GenerationHandler:
         token_obj = await self.load_balancer.select_token(
             for_image_generation=is_image,
             for_video_generation=is_video,
-            required_sora2_remaining=required_sora2_remaining
+            required_sora2_remaining=required_sora2_remaining,
+            require_pro=require_pro,
         )
         if not token_obj:
             if is_image:
@@ -354,6 +365,8 @@ class GenerationHandler:
             if is_video:
                 # Get n_frames from model configuration
                 n_frames = model_config.get("n_frames", 300)  # Default to 300 frames (10s)
+                video_model = model_config.get("model", "sy_8")
+                video_size = model_config.get("size", "small")
 
                 # Check if prompt is in storyboard format
                 if self.sora_client.is_storyboard_prompt(prompt):
@@ -370,7 +383,9 @@ class GenerationHandler:
                         formatted_prompt, token_obj.token,
                         orientation=model_config["orientation"],
                         media_id=media_id,
-                        n_frames=n_frames
+                        n_frames=n_frames,
+                        model=video_model,
+                        size=video_size,
                     )
                 else:
                     # Normal video generation
@@ -378,7 +393,9 @@ class GenerationHandler:
                         prompt, token_obj.token,
                         orientation=model_config["orientation"],
                         media_id=media_id,
-                        n_frames=n_frames
+                        n_frames=n_frames,
+                        model=video_model,
+                        size=video_size,
                     )
             else:
                 task_id = await self.sora_client.generate_image(
@@ -1053,7 +1070,8 @@ class GenerationHandler:
         required_sora2_remaining = self._get_required_sora2_remaining(model_config)
         token_obj = await self.load_balancer.select_token(
             for_video_generation=True,
-            required_sora2_remaining=required_sora2_remaining
+            required_sora2_remaining=required_sora2_remaining,
+            require_pro=bool(model_config.get("require_pro", False)),
         )
         if not token_obj:
             raise Exception("No available tokens for character creation")
@@ -1174,7 +1192,8 @@ class GenerationHandler:
         required_sora2_remaining = self._get_required_sora2_remaining(model_config)
         token_obj = await self.load_balancer.select_token(
             for_video_generation=True,
-            required_sora2_remaining=required_sora2_remaining
+            required_sora2_remaining=required_sora2_remaining,
+            require_pro=bool(model_config.get("require_pro", False)),
         )
         if not token_obj:
             raise Exception("No available tokens for video generation")
@@ -1268,11 +1287,15 @@ class GenerationHandler:
 
             # Get n_frames from model configuration
             n_frames = model_config.get("n_frames", 300)  # Default to 300 frames (10s)
+            video_model = model_config.get("model", "sy_8")
+            video_size = model_config.get("size", "small")
 
             task_id = await self.sora_client.generate_video(
                 full_prompt, token_obj.token,
                 orientation=model_config["orientation"],
-                n_frames=n_frames
+                n_frames=n_frames,
+                model=video_model,
+                size=video_size,
             )
             debug_logger.log_info(f"Video generation started, task_id: {task_id}")
 
@@ -1338,7 +1361,8 @@ class GenerationHandler:
         required_sora2_remaining = self._get_required_sora2_remaining(model_config)
         token_obj = await self.load_balancer.select_token(
             for_video_generation=True,
-            required_sora2_remaining=required_sora2_remaining
+            required_sora2_remaining=required_sora2_remaining,
+            require_pro=bool(model_config.get("require_pro", False)),
         )
         if not token_obj:
             raise Exception("No available tokens for remix generation")
@@ -1355,6 +1379,8 @@ class GenerationHandler:
 
             # Get n_frames from model configuration
             n_frames = model_config.get("n_frames", 300)  # Default to 300 frames (10s)
+            video_model = model_config.get("model", "sy_8")
+            video_size = model_config.get("size", "small")
 
             # Call remix API
             yield self._format_stream_chunk(
@@ -1365,7 +1391,9 @@ class GenerationHandler:
                 prompt=clean_prompt,
                 token=token_obj.token,
                 orientation=model_config["orientation"],
-                n_frames=n_frames
+                n_frames=n_frames,
+                model=video_model,
+                size=video_size,
             )
             debug_logger.log_info(f"Remix generation started, task_id: {task_id}")
 

@@ -7,7 +7,7 @@ import json
 import re
 from ..core.auth import verify_api_key_header
 from ..core.models import ChatCompletionRequest
-from ..services.generation_handler import GenerationHandler, MODEL_CONFIG
+from ..services.generation_handler import GenerationHandler, MODEL_CONFIG, MODEL_ALIASES
 
 router = APIRouter()
 
@@ -48,6 +48,9 @@ async def list_models(api_key: str = Depends(verify_api_key_header)):
     models = []
     
     for model_id, config in MODEL_CONFIG.items():
+        # Hide legacy aliases from /v1/models to avoid duplicate entries
+        if model_id in MODEL_ALIASES:
+            continue
         description = f"{config['type'].capitalize()} generation"
         if config['type'] == 'image':
             description += f" - {config['width']}x{config['height']}"
@@ -233,6 +236,19 @@ async def create_chat_completion(
                     }
                 )
 
+    except HTTPException as e:
+        # Return OpenAI-compatible error format with original status code
+        return JSONResponse(
+            status_code=e.status_code,
+            content={
+                "error": {
+                    "message": str(e.detail),
+                    "type": "invalid_request_error" if 400 <= e.status_code < 500 else "server_error",
+                    "param": None,
+                    "code": None
+                }
+            }
+        )
     except Exception as e:
         # Return OpenAI-compatible error format
         return JSONResponse(

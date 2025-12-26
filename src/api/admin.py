@@ -176,10 +176,34 @@ async def logout(token: str = Depends(verify_admin_token)):
 async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
     """Get all tokens with statistics"""
     tokens = await token_manager.get_all_tokens()
+
+    polling_counts_snapshot = None
+    if generation_handler and getattr(generation_handler, "load_balancer", None):
+        try:
+            polling_counts_snapshot = await generation_handler.load_balancer.get_polling_counts_snapshot()
+        except Exception:
+            polling_counts_snapshot = None
+
     result = []
 
     for token in tokens:
+        # Enforce: tokens that don't support Sora2 should not stay enabled
+        if token.id is not None and token.sora2_supported is False and token.is_active:
+            try:
+                await token_manager.disable_token(token.id)
+                token.is_active = False
+            except Exception:
+                pass
         stats = await db.get_token_stats(token.id)
+        polling_image = 0
+        polling_video = 0
+        polling_default = 0
+        if polling_counts_snapshot and token.id is not None:
+            polling_image = polling_counts_snapshot.get("image", {}).get(token.id, 0)
+            polling_video = polling_counts_snapshot.get("video", {}).get(token.id, 0)
+            polling_default = polling_counts_snapshot.get("default", {}).get(token.id, 0)
+        polling_total = polling_image + polling_video + polling_default
+
         result.append({
             "id": token.id,
             "token": token.token,  # 完整的Access Token
@@ -215,7 +239,12 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
             "video_enabled": token.video_enabled,
             # 并发限制
             "image_concurrency": token.image_concurrency,
-            "video_concurrency": token.video_concurrency
+            "video_concurrency": token.video_concurrency,
+            # 轮询统计（仅在轮询调用模式下累积）
+            "polling_count": polling_total,
+            "polling_count_image": polling_image,
+            "polling_count_video": polling_video,
+            "polling_count_default": polling_default,
         })
 
     return result
@@ -678,6 +707,14 @@ async def update_call_logic_config(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/call-logic/polling/reset")
+async def reset_call_logic_polling_counts(token: str = Depends(verify_admin_token)) -> dict:
+    """Reset in-memory polling counters for round-robin scheduling."""
+    if not generation_handler or not getattr(generation_handler, "load_balancer", None):
+        raise HTTPException(status_code=500, detail="Load balancer not initialized")
+    await generation_handler.load_balancer.reset_polling_counts()
+    return {"success": True, "message": "Polling counts reset"}
 
 # Statistics endpoints
 @router.get("/api/stats")

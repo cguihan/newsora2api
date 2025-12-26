@@ -125,7 +125,7 @@
     btn.title = '切换浅色/深色主题';
     btn.innerHTML = '<span class="h-2 w-2 rounded-full bg-primary"></span><span id="themeToggleText">浅色</span>';
     btn.addEventListener('click', window.toggleTheme);
-    const github = nav.querySelector('a[href*="github.com/Wuniao79/sora2api"]');
+    const github = nav.querySelector('a[href*="github.com/Wuniao79/newsora2api"]');
     nav.insertBefore(btn, github || nav.firstChild);
   };
 

@@ -176,16 +176,21 @@ class Database:
         cursor = await db.execute("SELECT COUNT(*) FROM call_logic_config")
         count = await cursor.fetchone()
         if count[0] == 0:
+            call_mode = "default"
             polling_mode_enabled = False
 
             if config_dict:
                 call_logic_config = config_dict.get("call_logic", {})
-                polling_mode_enabled = call_logic_config.get("polling_mode_enabled", False)
+                call_mode = call_logic_config.get("call_mode")
+                if call_mode not in ("default", "polling"):
+                    polling_mode_enabled = call_logic_config.get("polling_mode_enabled", False)
+                    call_mode = "polling" if polling_mode_enabled else "default"
+                polling_mode_enabled = call_mode == "polling"
 
             await db.execute("""
-                INSERT INTO call_logic_config (id, polling_mode_enabled)
-                VALUES (1, ?)
-            """, (polling_mode_enabled,))
+                INSERT INTO call_logic_config (id, polling_mode_enabled, call_mode)
+                VALUES (1, ?, ?)
+            """, (polling_mode_enabled, call_mode))
 
 
     async def check_and_migrate_db(self, config_dict: dict = None):
@@ -268,6 +273,23 @@ class Database:
                             print(f"  ✓ Added column '{col_name}' to watermark_free_config table")
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
+
+            # Check and add missing columns to call_logic_config table
+            if await self._table_exists(db, "call_logic_config"):
+                if not await self._column_exists(db, "call_logic_config", "call_mode"):
+                    try:
+                        await db.execute("ALTER TABLE call_logic_config ADD COLUMN call_mode TEXT")
+                        await db.execute("""
+                            UPDATE call_logic_config
+                            SET call_mode = CASE
+                                WHEN polling_mode_enabled = 1 THEN 'polling'
+                                ELSE 'default'
+                            END
+                            WHERE call_mode IS NULL OR call_mode = ''
+                        """)
+                        print("  ? Added column 'call_mode' to call_logic_config table")
+                    except Exception as e:
+                        print(f"  ? Failed to add column 'call_mode': {e}")
 
             # Ensure all config tables have their default rows
             # Pass config_dict if available to initialize from setting.toml
@@ -439,6 +461,7 @@ class Database:
                 CREATE TABLE IF NOT EXISTS call_logic_config (
                     id INTEGER PRIMARY KEY DEFAULT 1,
                     polling_mode_enabled BOOLEAN DEFAULT 0,
+                    call_mode TEXT DEFAULT 'default',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -1136,15 +1159,20 @@ class Database:
             cursor = await db.execute("SELECT * FROM call_logic_config WHERE id = 1")
             row = await cursor.fetchone()
             if row:
-                return CallLogicConfig(**dict(row))
-            return CallLogicConfig(polling_mode_enabled=False)
+                row_dict = dict(row)
+                if not row_dict.get("call_mode"):
+                    row_dict["call_mode"] = "polling" if row_dict.get("polling_mode_enabled") else "default"
+                return CallLogicConfig(**row_dict)
+            return CallLogicConfig(call_mode="default", polling_mode_enabled=False)
 
-    async def update_call_logic_config(self, polling_mode_enabled: bool):
+    async def update_call_logic_config(self, call_mode: str):
         """Update call logic configuration"""
+        normalized = "polling" if call_mode == "polling" else "default"
+        polling_mode_enabled = normalized == "polling"
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
                 UPDATE call_logic_config
-                SET polling_mode_enabled = ?, updated_at = CURRENT_TIMESTAMP
+                SET polling_mode_enabled = ?, call_mode = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = 1
-            """, (polling_mode_enabled,))
+            """, (polling_mode_enabled, normalized))
             await db.commit()

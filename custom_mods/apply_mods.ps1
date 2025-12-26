@@ -8,7 +8,17 @@ if (-not (Test-Path $overrideRoot)) {
     exit 1
 }
 
-Get-ChildItem -Path $overrideRoot -Recurse -File | ForEach-Object {
+$excludeDirPattern = '(^|\\)(?:__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|node_modules|dist|build)(\\|$)'
+$excludeExtensions = @('.pyc', '.pyo', '.pyd', '.log', '.db', '.sqlite', '.sqlite3')
+$excludeFileNames = @('.DS_Store', 'Thumbs.db')
+
+Get-ChildItem -Path $overrideRoot -Recurse -File | Where-Object {
+    $relative = $_.FullName.Substring($overrideRoot.Length).TrimStart('\\')
+    if ($relative -match $excludeDirPattern) { return $false }
+    if ($excludeExtensions -contains $_.Extension) { return $false }
+    if ($excludeFileNames -contains $_.Name) { return $false }
+    return $true
+} | ForEach-Object {
     $relative = $_.FullName.Substring($overrideRoot.Length).TrimStart('\\')
     $dest = Join-Path $RepoRoot $relative
     $destDir = Split-Path $dest -Parent

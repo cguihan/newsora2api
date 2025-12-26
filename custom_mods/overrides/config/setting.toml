@@ -46,4 +46,4 @@ custom_parse_token = ""
 at_auto_refresh_enabled = false
 
 [call_logic]
-polling_mode_enabled = false
+call_mode = "default"

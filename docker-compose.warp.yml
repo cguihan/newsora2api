@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   sora2api:
-    image: thesmallhancat/sora2api:latest
+    build:
+      context: .
+    image: newsora2api:latest
     container_name: sora2api
     ports:
       - "8000:8000"

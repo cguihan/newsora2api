@@ -660,8 +660,17 @@ class SoraClient:
                 raise Exception(f"Failed to delete character: {response.status_code}")
             return True
 
-    async def remix_video(self, remix_target_id: str, prompt: str, token: str,
-                         orientation: str = "portrait", n_frames: int = 450, style_id: Optional[str] = None) -> str:
+    async def remix_video(
+        self,
+        remix_target_id: str,
+        prompt: str,
+        token: str,
+        orientation: str = "portrait",
+        n_frames: int = 450,
+        style_id: Optional[str] = None,
+        model: str = "sy_8",
+        size: str = "small",
+    ) -> str:
         """Generate video using remix (based on existing video)
 
         Args:
@@ -671,6 +680,8 @@ class SoraClient:
             orientation: Video orientation (portrait/landscape)
             n_frames: Number of frames
             style_id: Optional style ID
+            model: Model to use (sy_8 for standard, sy_ore for pro)
+            size: Video size (small for standard, large for HD)
 
         Returns:
             task_id
@@ -682,8 +693,9 @@ class SoraClient:
             "remix_target_id": remix_target_id,
             "cameo_ids": [],
             "cameo_replacements": {},
-            "model": "sy_8",
+            "model": model,
             "orientation": orientation,
+            "size": size,
             "n_frames": n_frames,
             "style_id": style_id
         }
@@ -691,8 +703,17 @@ class SoraClient:
         result = await self._make_request("POST", "/nf/create", token, json_data=json_data, add_sentinel_token=True)
         return result.get("id")
 
-    async def generate_storyboard(self, prompt: str, token: str, orientation: str = "landscape",
-                                 media_id: Optional[str] = None, n_frames: int = 450, style_id: Optional[str] = None) -> str:
+    async def generate_storyboard(
+        self,
+        prompt: str,
+        token: str,
+        orientation: str = "landscape",
+        media_id: Optional[str] = None,
+        n_frames: int = 450,
+        style_id: Optional[str] = None,
+        model: str = "sy_8",
+        size: str = "small",
+    ) -> str:
         """Generate video using storyboard mode
 
         Args:
@@ -702,6 +723,8 @@ class SoraClient:
             media_id: Optional image media_id for image-to-video
             n_frames: Number of frames
             style_id: Optional style ID
+            model: Model to use (sy_8 for standard, sy_ore for pro)
+            size: Video size (small for standard, large for HD)
 
         Returns:
             task_id
@@ -718,12 +741,12 @@ class SoraClient:
             "prompt": prompt,
             "title": "Draft your video",
             "orientation": orientation,
-            "size": "small",
+            "size": size,
             "n_frames": n_frames,
             "storyboard_id": None,
             "inpaint_items": inpaint_items,
             "remix_target_id": None,
-            "model": "sy_8",
+            "model": model,
             "metadata": None,
             "style_id": style_id,
             "cameo_ids": None,

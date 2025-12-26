@@ -51,11 +51,14 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/Wuniao79/sora2api.git
-cd sora2api
+git clone https://github.com/Wuniao79/newsora2api.git
+cd newsora2api
+
+# (推荐) 先修改配置（管理员账号/API Key 等）
+# config/setting.toml
 
 # 启动服务
-docker-compose up -d
+docker-compose up -d --build
 
 # 查看日志
 docker-compose logs -f
@@ -65,18 +68,20 @@ docker-compose logs -f
 
 ```bash
 # 使用 WARP 代理启动
-docker-compose -f docker-compose.warp.yml up -d
+docker-compose -f docker-compose.warp.yml up -d --build
 
 # 查看日志
 docker-compose -f docker-compose.warp.yml logs -f
 ```
 
+> 如果你的环境使用新版 Docker Compose 插件，把命令里的 `docker-compose` 替换为 `docker compose` 即可。
+
 ### 方式二：本地部署
 
 ```bash
 # 克隆项目
-git clone https://github.com/Wuniao79/sora2api.git
-cd sora2api
+git clone https://github.com/Wuniao79/newsora2api.git
+cd newsora2api
 
 # 创建虚拟环境
 python -m venv venv
@@ -530,8 +535,8 @@ for line in response.iter_lines():
 
 ## 📞 联系方式
 
-- 提交 Issue：[GitHub Issues](https://github.com/Wuniao79/sora2api/issues)
-- 讨论：[GitHub Discussions](https://github.com/Wuniao79/sora2api/discussions)
+- 提交 Issue：[GitHub Issues](https://github.com/Wuniao79/newsora2api/issues)
+- 讨论：[GitHub Discussions](https://github.com/Wuniao79/newsora2api/discussions)
 
 ---
 
@@ -539,4 +544,4 @@ for line in response.iter_lines():
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Wuniao79/sora2api&type=date&legend=top-left)](https://www.star-history.com/#Wuniao79/sora2api&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=Wuniao79/newsora2api&type=date&legend=top-left)](https://www.star-history.com/#Wuniao79/newsora2api&type=date&legend=top-left)

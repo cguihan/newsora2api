@@ -749,6 +749,11 @@ class TokenManager:
             # If API call fails, Sora2 info will be None
             print(f"Failed to get Sora2 info: {e}")
 
+        # If the account does not support Sora2, keep it disabled by default
+        is_active = True
+        if sora2_supported is False:
+            is_active = False
+
         # Check and set username if needed
         try:
             # Get fresh user info to check username
@@ -795,7 +800,7 @@ class TokenManager:
             client_id=client_id,
             remark=remark,
             expiry_time=expiry_time,
-            is_active=True,
+            is_active=is_active,
             plan_type=plan_type,
             plan_title=plan_title,
             subscription_end=subscription_end,
@@ -907,10 +912,17 @@ class TokenManager:
     
     async def update_token_status(self, token_id: int, is_active: bool):
         """Update token active status"""
+        if is_active:
+            token_data = await self.db.get_token(token_id)
+            if token_data and token_data.sora2_supported is False:
+                raise ValueError("Token does not support Sora2, cannot enable")
         await self.db.update_token_status(token_id, is_active)
 
     async def enable_token(self, token_id: int):
         """Enable a token and reset error count"""
+        token_data = await self.db.get_token(token_id)
+        if token_data and token_data.sora2_supported is False:
+            raise ValueError("Token does not support Sora2, cannot enable")
         await self.db.update_token_status(token_id, True)
         # Reset error count when enabling (in token_stats table)
         await self.db.reset_error_count(token_id)
@@ -993,6 +1005,10 @@ class TokenManager:
             )
 
             await self.db.update_token_status_code(token_id, 200)
+
+            # If token doesn't support Sora2, keep it disabled
+            if sora2_supported is False:
+                await self.disable_token(token_id)
 
             return {
                 "valid": True,

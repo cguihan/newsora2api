@@ -1,6 +1,7 @@
 """Load balancing module"""
 import asyncio
 import random
+from collections import defaultdict
 from typing import Optional
 from ..core.models import Token
 from ..core.config import config
@@ -18,6 +19,11 @@ class LoadBalancer:
         # Use image timeout from config as lock timeout
         self.token_lock = TokenLock(lock_timeout=config.image_timeout)
         self._round_robin_state = {"image": None, "video": None, "default": None}
+        self._round_robin_counts = {
+            "image": defaultdict(int),
+            "video": defaultdict(int),
+            "default": defaultdict(int),
+        }
         self._rr_lock = asyncio.Lock()
 
     async def _select_round_robin(self, tokens: list[Token], key: str) -> Optional[Token]:
@@ -35,13 +41,31 @@ class LoadBalancer:
                         break
             selected = tokens_sorted[start_idx]
             self._round_robin_state[key] = selected.id
+            if selected.id is not None:
+                self._round_robin_counts.setdefault(key, defaultdict(int))[selected.id] += 1
         return selected
+
+    async def get_polling_counts_snapshot(self) -> dict[str, dict[int, int]]:
+        """Get a snapshot of current polling counts (per key, per token_id)."""
+        async with self._rr_lock:
+            return {key: dict(counts) for key, counts in self._round_robin_counts.items()}
+
+    async def reset_polling_counts(self) -> None:
+        """Reset polling counters and round-robin state."""
+        async with self._rr_lock:
+            self._round_robin_state = {"image": None, "video": None, "default": None}
+            self._round_robin_counts = {
+                "image": defaultdict(int),
+                "video": defaultdict(int),
+                "default": defaultdict(int),
+            }
 
     async def select_token(
         self,
         for_image_generation: bool = False,
         for_video_generation: bool = False,
-        required_sora2_remaining: int = 1
+        required_sora2_remaining: int = 1,
+        require_pro: bool = False,
     ) -> Optional[Token]:
         """
         Select a token using random or polling load balancing.
@@ -90,6 +114,8 @@ class LoadBalancer:
                 if not token.video_enabled:
                     continue
                 if not token.sora2_supported:
+                    continue
+                if require_pro and (token.plan_type or "").lower() != "chatgpt_pro":
                     continue
 
                 if token.sora2_cooldown_until and token.sora2_cooldown_until <= datetime.now():
