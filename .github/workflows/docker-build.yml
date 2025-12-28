@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 # 触发条件：当代码推送到 main 分支时
 on:
   push:
-    branches: [ "main" ] # 如果你的主分支叫 master，请改为 master
+    branches: [ "master" ] # 如果你的主分支叫 master，请改为 master
   workflow_dispatch: # 允许手动点击按钮触发
 
 jobs:
