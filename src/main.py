@@ -34,6 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Initialize components
 db = Database()
 token_manager = TokenManager(db)
