@@ -126,7 +126,7 @@ class SoraClient:
             kwargs = {
                 "headers": headers,
                 "timeout": self.timeout,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹 chrome
             }
 
             if proxy_url:
@@ -357,7 +357,7 @@ class SoraClient:
             kwargs = {
                 "headers": headers,
                 "timeout": self.timeout,
-                "impersonate": "chrome"
+                "impersonate": "safari_ios"
             }
 
             if proxy_url:
@@ -430,7 +430,7 @@ class SoraClient:
         kwargs = {
             "json": json_data,
             "timeout": 30,
-            "impersonate": "chrome"
+            "impersonate": "safari_ios"
         }
 
         if proxy_url:
@@ -546,7 +546,7 @@ class SoraClient:
 
         kwargs = {
             "timeout": self.timeout,
-            "impersonate": "chrome"
+            "impersonate": "safari_ios"
         }
 
         if proxy_url:
@@ -649,7 +649,7 @@ class SoraClient:
             kwargs = {
                 "headers": headers,
                 "timeout": self.timeout,
-                "impersonate": "chrome"
+                "impersonate": "safari_ios"
             }
 
             if proxy_url:
