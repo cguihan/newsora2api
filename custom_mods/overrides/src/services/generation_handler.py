@@ -178,7 +178,7 @@ class GenerationHandler:
 
         kwargs = {
             "timeout": 30,
-            "impersonate": "chrome"
+            "impersonate": "safari_ios"
         }
 
         if proxy_url:

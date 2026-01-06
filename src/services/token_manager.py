@@ -75,7 +75,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -116,7 +116,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -179,7 +179,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -287,7 +287,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -345,7 +345,7 @@ class TokenManager:
                 "headers": headers,
                 "json": {"username": username},
                 "timeout": 30,
-                "impersonate": "chrome"
+                "impersonate": "safari_ios"
             }
 
             if proxy_url:
@@ -393,7 +393,7 @@ class TokenManager:
                 "headers": headers,
                 "json": {"username": username},
                 "timeout": 30,
-                "impersonate": "chrome"
+                "impersonate": "safari_ios"
             }
 
             if proxy_url:
@@ -483,7 +483,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -576,7 +576,7 @@ class TokenManager:
                     "refresh_token": refresh_token
                 },
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "safari_ios"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
