@@ -284,6 +284,7 @@ class SoraClient:
 
         headers = {
             "Authorization": f"Bearer {token}"
+            "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
         }
 
         # 只在生成请求时添加 sentinel token
