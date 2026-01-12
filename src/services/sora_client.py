@@ -283,7 +283,7 @@ class SoraClient:
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         headers = {
-            "Authorization": f"Bearer {token}"
+            "Authorization": f"Bearer {token}",
             "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
         }
 
